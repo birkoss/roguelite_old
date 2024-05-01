@@ -74,7 +74,7 @@ export class StateMachine {
         this.#currentState = this.#states.get(name);
 
         if (this.#currentState.onEnter) {
-            console.log(`${StateMachine.name}-${this.#id}:${methodName} ${this.#currentState?.name} on enter invoked`);
+            // console.log(`${StateMachine.name}-${this.#id}:${methodName} ${this.#currentState?.name} on enter invoked`);
             this.#currentState.onEnter();
         }
 

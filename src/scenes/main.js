@@ -7,11 +7,17 @@ import { StateMachine } from "../state-machine.js";
 import { UNIT_ACTION_TYPES, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
 
+// Nothing selected
+// Player selected
+// actions visible
+// enemy selected
+
 const MAIN_STATES = Object.freeze({
     CREATE_MAP: 'CREATE_MAP',
     TURN_START: 'TURN_START',
     CHANGE_UNIT: 'CHANGE_UNIT',
-    PLAYER_INPUT: 'PLAYER_INPUT',
+    PLAYER_WAIT_FOR_SELECTION: 'PLAYER_WAIT_FOR_SELECTION',
+    PLAYER_WAIT_FOR_ACTION: 'PLAYER_WAIT_FOR_ACTION',
     ENEMY_INPUT: 'ENEMY_INPUT',
     TURN_END: 'TURN_END',
 });
@@ -141,7 +147,7 @@ export class MainScene extends Phaser.Scene {
                     }
                 }],
             }
-        }, { x: 1, y: 1 });
+        }, { x: 3, y: 3 });
         this.#mapContainer.add(player.gameObject);
         this.#units.push(player);
 
@@ -162,6 +168,16 @@ export class MainScene extends Phaser.Scene {
         }, { x: 1, y: 2 });
         this.#mapContainer.add(enemy.gameObject);
         this.#units.push(enemy);
+
+        this.#units.forEach((singleUnit) => {
+            singleUnit.gameObject.setInteractive();
+            singleUnit.gameObject.on('pointerdown', () => {
+                if (this.#stateMachine.currentStateName === MAIN_STATES.PLAYER_WAIT_FOR_SELECTION) {
+                    this.#selectUnit(singleUnit);
+                    this.#stateMachine.setState(MAIN_STATES.PLAYER_WAIT_FOR_ACTION);
+                }
+            });
+        });
     }
 
     #createStateMachine() {
@@ -218,7 +234,8 @@ export class MainScene extends Phaser.Scene {
                 this.#currentUnitQueue = this.#unitsQueue.shift();
 
                 if (this.#currentUnitQueue.type == UNIT_TYPES.PLAYER) {
-                    this.#stateMachine.setState(MAIN_STATES.PLAYER_INPUT);
+                    this.#selectUnit(this.#currentUnitQueue);
+                    this.#stateMachine.setState(MAIN_STATES.PLAYER_WAIT_FOR_ACTION);
                     return;
                 }
                 
@@ -232,7 +249,7 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#stateMachine.addState({
-            name: MAIN_STATES.PLAYER_INPUT,
+            name: MAIN_STATES.PLAYER_WAIT_FOR_SELECTION,
             onEnter: () => {
                 if (!this.#currentUnitQueue.hasAp) {
                     this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
@@ -241,10 +258,18 @@ export class MainScene extends Phaser.Scene {
 
                 // Wait for move
                 if (!this.#selectedUnit) {
-                    this.#selectUnit(this.#currentUnitQueue);
+                    //this.#selectUnit(this.#currentUnitQueue);
                 }
 
-                this.#enableMapClick();
+                // this.#enableMapClick();
+            },
+        });
+
+        this.#stateMachine.addState({
+            name: MAIN_STATES.PLAYER_WAIT_FOR_ACTION,
+            onEnter: () => {
+                
+                // Pick a move
             },
         });
 
@@ -274,10 +299,14 @@ export class MainScene extends Phaser.Scene {
         this.#createOverlay(
             unit.gameObject.x,
             unit.gameObject.y,
-            MAIN_UI_ASSET_KEYS.SELECTED_UNIT
+            MAIN_UI_ASSET_KEYS.SELECTED_UNIT,
+            () => {
+                this.#unselectUnit();
+                this.#stateMachine.setState(MAIN_STATES.PLAYER_WAIT_FOR_SELECTION);
+            }
         );
 
-        if (unit.type == UNIT_TYPES.PLAYER) {
+        if (unit.type === UNIT_TYPES.PLAYER) {
             unit.actions.forEach((singleAction) => {
                 const newPosition = {
                     x: unit.position.x + singleAction.position.x,
@@ -304,7 +333,15 @@ export class MainScene extends Phaser.Scene {
                     this.#createOverlay(
                         unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
                         unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
-                        MAIN_UI_ASSET_KEYS.MOVE
+                        MAIN_UI_ASSET_KEYS.MOVE,
+                        () => {
+                            this.#unselectUnit();
+
+                            this.#currentUnitQueue.move(newPosition.x, newPosition.y, () => {
+                                this.#selectUnit(this.#currentUnitQueue);
+                                this.#stateMachine.setState(MAIN_STATES.PLAYER_WAIT_FOR_ACTION);
+                            });
+                        }
                     );
                     return;
                 }
@@ -318,16 +355,26 @@ export class MainScene extends Phaser.Scene {
                     this.#createOverlay(
                         unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
                         unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
-                        MAIN_UI_ASSET_KEYS.ATTACK_MELEE
+                        MAIN_UI_ASSET_KEYS.ATTACK_MELEE,
+                        () => {
+                            console.log("ATTACK", this.#selectedUnit, unit);
+                        }
                     );
                     return;
                 }
 
                 exhaustiveGuard(singleAction.type);
             });
-        } else {
-            console.log("SHOW STATUS: ", unit);
+
+            return;
         }
+        
+        if (unit.type === UNIT_TYPES.ENEMY) {
+            console.log("SHOW STATUS: ", unit);
+            return;
+        }
+
+        exhaustiveGuard(unit.type);
     }
 
     #unselectUnit() {
@@ -335,12 +382,12 @@ export class MainScene extends Phaser.Scene {
             this.#mapOverlayContainer.getAll().forEach((singleOverlay) => {
                 singleOverlay.destroy();
             });
+            this.#selectedUnit = undefined;
         }
-
-        this.#selectedUnit = undefined;
     }
 
     #enableMapClick() {
+        return;
         this.#mapContainer.off('pointerdown').on('pointerdown', (event) => {
             const x = Math.floor((event.worldX - this.#mapContainer.x) / 48);
             const y = Math.floor((event.worldY - this.#mapContainer.y) / 48);
@@ -375,10 +422,15 @@ export class MainScene extends Phaser.Scene {
      * @param {string} assetKey 
      * @return {Phaser.GameObjects.Image}
      */
-    #createOverlay(x, y, assetKey) {
+    #createOverlay(x, y, assetKey, callback) {
         const image = this.add.image(x, y, assetKey);
         image.setOrigin(0);
         this.#mapOverlayContainer.add(image);
+
+        if (callback) {
+            image.setInteractive();
+            image.on('pointerdown', callback);
+        }
 
         return image;
     }

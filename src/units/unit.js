@@ -135,4 +135,18 @@ export class Unit {
             this._currentAp = 0;
         }
     }
+
+    move(x, y, callback) {
+        this.position.x = x;
+        this.position.y = y;
+
+        this._scene.add.tween({
+            targets: this._phaserGameObject,
+            x: x * this._phaserGameObject.displayWidth,
+            y: y * this._phaserGameObject.displayHeight,
+            duration: 500,
+            ease: Phaser.Math.Easing.Sine.Out,
+            onComplete: callback,
+        });
+    }
 }
