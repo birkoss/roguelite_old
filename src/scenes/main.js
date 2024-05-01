@@ -4,7 +4,7 @@ import { SCENE_KEYS } from "../keys/scene.js";
 import { Map, TILE_TYPE } from "../map.js";
 import { MAIN_UI_ASSET_KEYS, MAP_ASSET_KEYS } from "../keys/asset.js";
 import { StateMachine } from "../state-machine.js";
-import { UNIT_TYPES, Unit } from "../units/unit.js";
+import { UNIT_ACTION_TYPES, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
 
 const MAIN_STATES = Object.freeze({
@@ -91,9 +91,57 @@ export class MainScene extends Phaser.Scene {
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 0,
-                attackIds: [],
+                actions: [{
+                    type: UNIT_ACTION_TYPES.MOVE,
+                    position: {
+                        x: -1,
+                        y: 0,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.MOVE,
+                    position: {
+                        x: 1,
+                        y: 0,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.MOVE,
+                    position: {
+                        x: 0,
+                        y: -1,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.MOVE,
+                    position: {
+                        x: 0,
+                        y: 1,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.ATTACK_MELEE,
+                    position: {
+                        x: -1,
+                        y: 0,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.ATTACK_MELEE,
+                    position: {
+                        x: 1,
+                        y: 0,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.ATTACK_MELEE,
+                    position: {
+                        x: 0,
+                        y: -1,
+                    }
+                },{
+                    type: UNIT_ACTION_TYPES.ATTACK_MELEE,
+                    position: {
+                        x: 0,
+                        y: 1,
+                    }
+                }],
             }
-        }, { x: 5, y: 5 });
+        }, { x: 1, y: 1 });
         this.#mapContainer.add(player.gameObject);
         this.#units.push(player);
 
@@ -109,9 +157,9 @@ export class MainScene extends Phaser.Scene {
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 290,
-                attackIds: [],
+                actions: [],
             }
-        }, { x: 5, y: 6 });
+        }, { x: 1, y: 2 });
         this.#mapContainer.add(enemy.gameObject);
         this.#units.push(enemy);
     }
@@ -223,12 +271,60 @@ export class MainScene extends Phaser.Scene {
 
         this.#selectedUnit = unit;
 
-        this.#createOverlay(unit.gameObject.x, unit.gameObject.y, MAIN_UI_ASSET_KEYS.SELECTED_UNIT);
+        this.#createOverlay(
+            unit.gameObject.x,
+            unit.gameObject.y,
+            MAIN_UI_ASSET_KEYS.SELECTED_UNIT
+        );
 
         if (unit.type == UNIT_TYPES.PLAYER) {
-            // Show action around the player
+            unit.actions.forEach((singleAction) => {
+                const newPosition = {
+                    x: unit.position.x + singleAction.position.x,
+                    y: unit.position.y + singleAction.position.y,
+                }
 
-            this.#createOverlay(unit.gameObject.x-48, unit.gameObject.y, MAIN_UI_ASSET_KEYS.MOVE);
+                if (singleAction.type === UNIT_ACTION_TYPES.MOVE) {
+                    // Outside the map
+                    if (!this.#map.isInBound(newPosition.x, newPosition.y)) {
+                        return;
+                    }
+
+                    // Unwalkable floor
+                    if (!this.#map.canMoveTo(newPosition.x, newPosition.y)) {
+                        return;
+                    }
+
+                    // Can't move over an enemy
+                    let enemy = this.#units.filter(singleUnit => singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
+                    if (enemy.length > 0) {
+                        return;
+                    }
+                    
+                    this.#createOverlay(
+                        unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
+                        unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
+                        MAIN_UI_ASSET_KEYS.MOVE
+                    );
+                    return;
+                }
+                if (singleAction.type === UNIT_ACTION_TYPES.ATTACK_MELEE) {
+                    // Need an ennemy to attack
+                    let enemy = this.#units.filter(singleUnit => singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
+                    if (enemy.length === 0) {
+                        return;
+                    }
+
+                    this.#createOverlay(
+                        unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
+                        unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
+                        MAIN_UI_ASSET_KEYS.ATTACK_MELEE
+                    );
+                    return;
+                }
+
+                exhaustiveGuard(singleAction.type);
+            });
         } else {
             console.log("SHOW STATUS: ", unit);
         }
@@ -250,7 +346,7 @@ export class MainScene extends Phaser.Scene {
             const y = Math.floor((event.worldY - this.#mapContainer.y) / 48);
             console.log(`Clicked on ${x}x${y}`);
 
-            // Check to unselect the selected unit
+            // Unselect the selected unit
             if (this.#selectedUnit !== undefined) {
                 let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y && singleUnit === this.#selectedUnit);
                 if (unit.length == 1) {
@@ -259,27 +355,16 @@ export class MainScene extends Phaser.Scene {
                 return;
             }
 
-            // The current unit is also selected
-            if (this.#currentUnitQueue === this.#selectedUnit) {
-                // TODO: Check if its an action tile
+            // Select an action
 
-                let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y && singleUnit === this.#selectedUnit);    
-                if (unit.length == 1) {
-                    this.#unselectUnit();
-                }
+            
 
-                return;
-            }
-
+            // Select an unit
             let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y);
             if (unit.length == 1) {
                 this.#selectUnit(unit[0]);
                 return;
             }
-
-            // - Check if its the current unit to unselect
-            //let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y);
-            //this.#stateMachine.setState(MAIN_STATES.TURN_START);
         });
     }
 

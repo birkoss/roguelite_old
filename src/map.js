@@ -47,6 +47,23 @@ export class Map {
         return [...this.#tiles];
     }
 
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @returns {boolean}
+     */
+    isInBound(x, y) {
+        if (x < 0 || y < 0 || x >= this.#width || y >= this.#height) {
+            return false;
+        }
+        return true;
+    }
+
+    canMoveTo(x, y) {
+        return this.tiles.filter(singleTile => singleTile.x === x && singleTile.y === y && singleTile.type === TILE_TYPE.FLOOR).length == 1;
+    }
+
     #generateMap() {
         this.#tiles = [];
 

@@ -1,4 +1,5 @@
 import Phaser from '../lib/phaser.js';
+import { UNIT_ACTION_TYPES } from '../units/unit.js';
 
 /** 
  * @typedef UnitConfig
@@ -19,7 +20,14 @@ import Phaser from '../lib/phaser.js';
  * @property {number} maxAp
  * @property {number} currentAp
  * @property {number} baseAttack
- * @property {number[]} attackIds
+ * @property {UnitAction[]} actions
+ */
+
+/** 
+ * @typedef UnitAction
+ * @type {Object}
+ * @property {UNIT_ACTION_TYPES} type
+ * @property {Coordinate} position
  */
 
 /** 

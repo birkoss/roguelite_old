@@ -7,6 +7,13 @@ export const UNIT_TYPES = Object.freeze({
     ENEMY: 'ENEMY',
 });
 
+/** @typedef {keyof typeof UNIT_ACTION_TYPES} UnitActionTypes */
+/** @enum {UnitActionTypes} */
+export const UNIT_ACTION_TYPES = Object.freeze({
+    MOVE: 'MOVE',
+    ATTACK_MELEE: 'ATTACK_MELEE',
+});
+
 export class Unit {
     /** @protected @type {Phaser.Scene} */
     _scene;
@@ -33,6 +40,9 @@ export class Unit {
     /** @protected @type {number} */
     _maxAp;
 
+    /** @protected @type {import('../types/typedef.js').UnitAction[]} */
+    _actions;
+
     /**
      * @param {UNIT_TYPES} type
      * @param {import('../types/typedef.js').UnitConfig} config
@@ -50,7 +60,7 @@ export class Unit {
         this._currentAp = this._unitDetails.currentAp;
         this._maxAp = this._unitDetails.maxAp;
 
-        this._monsterAttacks = [];
+        this._actions = this._unitDetails.actions;
 
         this._phaserGameObject = this._scene.add.image(
             0, 0,
@@ -58,6 +68,11 @@ export class Unit {
             this._unitDetails.assetFrame || 0
         ).setOrigin(0).setScale(2);
         this._phaserGameObject.setPosition(position.x * this._phaserGameObject.displayWidth, position.y * this._phaserGameObject.displayHeight);
+    }
+
+    /** @type {import('../types/typedef.js').UnitAction[]} */
+    get actions() {
+        return this._actions;
     }
 
     /** @type {import('../types/typedef.js').Coordinate} */
