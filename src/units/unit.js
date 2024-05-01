@@ -11,6 +11,9 @@ export class Unit {
     /** @protected @type {Phaser.Scene} */
     _scene;
 
+    /** @protected @type {import('../types/typedef.js').Coordinate} */
+    _position;
+
     /** @protected @type {UNIT_TYPES} */
     _type;
 
@@ -38,6 +41,7 @@ export class Unit {
     constructor(type, config, position) {
         this._type = type;
         this._scene = config.scene;
+        this._position = position;
         this._unitDetails = config.unitDetails;
 
         this._currentHp = this._unitDetails.currentHp;
@@ -54,6 +58,11 @@ export class Unit {
             this._unitDetails.assetFrame || 0
         ).setOrigin(0).setScale(2);
         this._phaserGameObject.setPosition(position.x * this._phaserGameObject.displayWidth, position.y * this._phaserGameObject.displayHeight);
+    }
+
+    /** @type {import('../types/typedef.js').Coordinate} */
+    get position() {
+        return this._position;
     }
 
     get hasAp() {

@@ -2,7 +2,7 @@ import Phaser from "../lib/phaser.js";
 
 import { SCENE_KEYS } from "../keys/scene.js";
 import { Map, TILE_TYPE } from "../map.js";
-import { MAP_ASSET_KEYS } from "../keys/asset.js";
+import { MAIN_UI_ASSET_KEYS, MAP_ASSET_KEYS } from "../keys/asset.js";
 import { StateMachine } from "../state-machine.js";
 import { UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
@@ -21,6 +21,8 @@ export class MainScene extends Phaser.Scene {
     #map;
     /** @type {Phaser.GameObjects.Container} */
     #mapContainer;
+    /** @type {Phaser.GameObjects.Container} */
+    #mapOverlayContainer;
 
     /** @type {StateMachine} */
     #stateMachine;
@@ -30,9 +32,11 @@ export class MainScene extends Phaser.Scene {
 
     /** @type {Unit[]} */
     #unitsQueue;
-
     /** @type {Unit | undefined} */
     #currentUnitQueue;
+
+    /** @type {Unit} */
+    #selectedUnit;
 
     constructor() {
         super({
@@ -63,6 +67,15 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#mapContainer.setPosition(this.scale.width - this.#mapContainer.getBounds().width, 0);
+
+        this.#mapContainer.setInteractive(
+            new Phaser.Geom.Rectangle(0, 0, this.#mapContainer.getBounds().width, this.#mapContainer.getBounds().height),
+            Phaser.Geom.Rectangle.Contains
+        );
+
+        this.#mapOverlayContainer = this.add.container(0, 0);
+        this.#mapOverlayContainer.x = this.#mapContainer.x;
+        this.#mapOverlayContainer.y = this.#mapContainer.y;
     }
 
     #createUnits() {
@@ -98,7 +111,7 @@ export class MainScene extends Phaser.Scene {
                 assetFrame: 290,
                 attackIds: [],
             }
-        }, { x: 3, y: 3 });
+        }, { x: 5, y: 6 });
         this.#mapContainer.add(enemy.gameObject);
         this.#units.push(enemy);
     }
@@ -179,7 +192,11 @@ export class MainScene extends Phaser.Scene {
                 }
 
                 // Wait for move
+                if (!this.#selectedUnit) {
+                    this.#selectUnit(this.#currentUnitQueue);
+                }
 
+                this.#enableMapClick();
             },
         });
 
@@ -196,5 +213,88 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#stateMachine.setState(MAIN_STATES.CREATE_MAP);
+    }
+
+    /**
+     * @param {Unit} unit 
+     */
+    #selectUnit(unit) {
+        this.#unselectUnit();
+
+        this.#selectedUnit = unit;
+
+        this.#createOverlay(unit.gameObject.x, unit.gameObject.y, MAIN_UI_ASSET_KEYS.SELECTED_UNIT);
+
+        if (unit.type == UNIT_TYPES.PLAYER) {
+            // Show action around the player
+
+            this.#createOverlay(unit.gameObject.x-48, unit.gameObject.y, MAIN_UI_ASSET_KEYS.MOVE);
+        } else {
+            console.log("SHOW STATUS: ", unit);
+        }
+    }
+
+    #unselectUnit() {
+        if (this.#selectedUnit) {
+            this.#mapOverlayContainer.getAll().forEach((singleOverlay) => {
+                singleOverlay.destroy();
+            });
+        }
+
+        this.#selectedUnit = undefined;
+    }
+
+    #enableMapClick() {
+        this.#mapContainer.off('pointerdown').on('pointerdown', (event) => {
+            const x = Math.floor((event.worldX - this.#mapContainer.x) / 48);
+            const y = Math.floor((event.worldY - this.#mapContainer.y) / 48);
+            console.log(`Clicked on ${x}x${y}`);
+
+            // Check to unselect the selected unit
+            if (this.#selectedUnit !== undefined) {
+                let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y && singleUnit === this.#selectedUnit);
+                if (unit.length == 1) {
+                    this.#unselectUnit();
+                }
+                return;
+            }
+
+            // The current unit is also selected
+            if (this.#currentUnitQueue === this.#selectedUnit) {
+                // TODO: Check if its an action tile
+
+                let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y && singleUnit === this.#selectedUnit);    
+                if (unit.length == 1) {
+                    this.#unselectUnit();
+                }
+
+                return;
+            }
+
+            let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y);
+            if (unit.length == 1) {
+                this.#selectUnit(unit[0]);
+                return;
+            }
+
+            // - Check if its the current unit to unselect
+            //let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y);
+            //this.#stateMachine.setState(MAIN_STATES.TURN_START);
+        });
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {string} assetKey 
+     * @return {Phaser.GameObjects.Image}
+     */
+    #createOverlay(x, y, assetKey) {
+        const image = this.add.image(x, y, assetKey);
+        image.setOrigin(0);
+        this.#mapOverlayContainer.add(image);
+
+        return image;
     }
 }
