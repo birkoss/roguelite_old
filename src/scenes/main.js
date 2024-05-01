@@ -3,12 +3,16 @@ import Phaser from "../lib/phaser.js";
 import { SCENE_KEYS } from "../keys/scene.js";
 import { Map, TILE_TYPE } from "../map.js";
 import { MAP_ASSET_KEYS } from "../keys/asset.js";
+import { StateMachine } from "../state-machine.js";
 
 export class MainScene extends Phaser.Scene {
     /** @type {Map} */
     #map;
     /** @type {Phaser.GameObjects.Container} */
     #mapContainer;
+
+    /** @type {StateMachine} */
+    #stateMachine;
 
     constructor() {
         super({
@@ -18,6 +22,12 @@ export class MainScene extends Phaser.Scene {
 
     create() {
         this.#createMap();
+
+        this.#createStateMachine();
+    }
+
+    update() {
+        this.#stateMachine.update();
     }
 
     #createMap() {
@@ -44,4 +54,7 @@ export class MainScene extends Phaser.Scene {
         this.#mapContainer.add(enemy);
     }
 
+    #createStateMachine() {
+        this.#stateMachine = new StateMachine('MAP', this);
+    }
 }
