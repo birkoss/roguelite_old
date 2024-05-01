@@ -1,13 +1,13 @@
 import Phaser from './lib/phaser.js';
 
-import { SCENE_KEYS } from './scenes/keys.js';
+import { SCENE_KEYS } from './keys/scene.js';
 
 import { PreloadScene } from './scenes/preload.js';
 import { MapScene } from './scenes/map.js';
 
 const game = new Phaser.Game({
     type: Phaser.CANVAS,
-    pixelArt: false,
+    pixelArt: true,
     scale: {
         parent: 'game-container',
         width: 1024,

@@ -1,6 +1,7 @@
 import Phaser from "../lib/phaser.js";
 
-import { SCENE_KEYS } from "./keys.js";
+import { SCENE_KEYS } from "../keys/scene.js";
+import { MAP_ASSET_KEYS } from "../keys/asset.js";
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -14,6 +15,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     create() {
-        // ...
+        this.background = this.add.sprite(0, 0, MAP_ASSET_KEYS.WORLD, 0);
+        this.background.setOrigin(0);
     }
 }
