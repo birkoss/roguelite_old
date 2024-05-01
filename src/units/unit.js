@@ -1,8 +1,18 @@
 import Phaser from '../lib/phaser.js';
 
+/** @typedef {keyof typeof UNIT_TYPES} UnitTypes */
+/** @enum {UnitTypes} */
+export const UNIT_TYPES = Object.freeze({
+    PLAYER: 'PLAYER',
+    ENEMY: 'ENEMY',
+});
+
 export class Unit {
     /** @protected @type {Phaser.Scene} */
     _scene;
+
+    /** @protected @type {UNIT_TYPES} */
+    _type;
 
     /** @protected @type {Phaser.GameObjects.Image} */
     _phaserGameObject;
@@ -11,20 +21,30 @@ export class Unit {
     _unitDetails;
 
     /** @protected @type {number} */
-    _currentHealth;
+    _currentHp;
     /** @protected @type {number} */
-    _maxHealth;
+    _maxHp;
+
+    /** @protected @type {number} */
+    _currentAp;
+    /** @protected @type {number} */
+    _maxAp;
 
     /**
-     * @param {import('../types/typedef.js').UnitConfig} config 
+     * @param {UNIT_TYPES} type
+     * @param {import('../types/typedef.js').UnitConfig} config
      * @param {import('../types/typedef.js').Coordinate} position 
      */
-    constructor(config, position) {
+    constructor(type, config, position) {
+        this._type = type;
         this._scene = config.scene;
         this._unitDetails = config.unitDetails;
 
-        this._currentHealth = this._unitDetails.currentHp;
-        this._maxHealth = this._unitDetails.maxHp;
+        this._currentHp = this._unitDetails.currentHp;
+        this._maxHp = this._unitDetails.maxHp;
+
+        this._currentAp = this._unitDetails.currentAp;
+        this._maxAp = this._unitDetails.maxAp;
 
         this._monsterAttacks = [];
 
@@ -33,8 +53,16 @@ export class Unit {
             this._unitDetails.assetKey,
             this._unitDetails.assetFrame || 0
         ).setOrigin(0).setScale(2);
-
         this._phaserGameObject.setPosition(position.x * this._phaserGameObject.displayWidth, position.y * this._phaserGameObject.displayHeight);
+    }
+
+    get hasAp() {
+        return this._currentAp > 0;
+    }
+
+    /** @type {UNIT_TYPES} */
+    get type() {
+        return this._type;
     }
 
     /** @type {Phaser.GameObjects.Image} */
@@ -44,7 +72,7 @@ export class Unit {
 
     /** @type {boolean} */
     get isAlive() {
-        return this._currentHealth > 0;
+        return this._currentHp > 0;
     }
 
     /** @type {string} */
@@ -67,9 +95,20 @@ export class Unit {
      * @param {() => void} [callback] 
      */
     takeDamage(damage, callback) {
-        this._currentHealth -= damage;
-        if (this._currentHealth < 0) {
-            this._currentHealth = 0;
+        this._currentHp -= damage;
+        if (this._currentHp < 0) {
+            this._currentHp = 0;
+        }
+    }
+
+    resetAp() {
+        this._currentAp = this._maxAp;
+    }
+
+    useAp() {
+        this._currentAp--;
+        if (this._currentAp < 0) {
+            this._currentAp = 0;
         }
     }
 }

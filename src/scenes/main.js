@@ -4,7 +4,8 @@ import { SCENE_KEYS } from "../keys/scene.js";
 import { Map, TILE_TYPE } from "../map.js";
 import { MAP_ASSET_KEYS } from "../keys/asset.js";
 import { StateMachine } from "../state-machine.js";
-import { Unit } from "../units/unit.js";
+import { UNIT_TYPES, Unit } from "../units/unit.js";
+import { exhaustiveGuard } from "../utils/guard.js";
 
 const MAIN_STATES = Object.freeze({
     CREATE_MAP: 'CREATE_MAP',
@@ -25,7 +26,13 @@ export class MainScene extends Phaser.Scene {
     #stateMachine;
 
     /** @type {Unit[]} */
+    #units;
+
+    /** @type {Unit[]} */
     #unitsQueue;
+
+    /** @type {Unit | undefined} */
+    #currentUnitQueue;
 
     constructor() {
         super({
@@ -33,6 +40,7 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#unitsQueue = [];
+        this.#units = [];
     }
 
     create() {
@@ -55,14 +63,18 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#mapContainer.setPosition(this.scale.width - this.#mapContainer.getBounds().width, 0);
+    }
 
-        const player = new Unit({
+    #createUnits() {
+        const player = new Unit(UNIT_TYPES.PLAYER, {
             scene: this,
             unitDetails: {
                 name: 'Archer',
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
+                maxAp: 3,
+                currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 0,
@@ -70,14 +82,17 @@ export class MainScene extends Phaser.Scene {
             }
         }, { x: 5, y: 5 });
         this.#mapContainer.add(player.gameObject);
+        this.#units.push(player);
 
-        const enemy = new Unit({
+        const enemy = new Unit(UNIT_TYPES.ENEMY, {
             scene: this,
             unitDetails: {
                 name: 'Skeleton',
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
+                maxAp: 3,
+                currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 290,
@@ -85,6 +100,7 @@ export class MainScene extends Phaser.Scene {
             }
         }, { x: 3, y: 3 });
         this.#mapContainer.add(enemy.gameObject);
+        this.#units.push(enemy);
     }
 
     #createStateMachine() {
@@ -95,6 +111,8 @@ export class MainScene extends Phaser.Scene {
             onEnter: () => {
                 this.#createMap();
 
+                this.#createUnits();
+
                 this.time.delayedCall(500, () => {
                     this.#stateMachine.setState(MAIN_STATES.TURN_START);
                 });
@@ -104,41 +122,74 @@ export class MainScene extends Phaser.Scene {
         this.#stateMachine.addState({
             name: MAIN_STATES.TURN_START,
             onEnter: () => {
-                // Get all units alives
-                // Sort them by speed
-                // Add them into a queue
+                this.#currentUnitQueue = undefined;
 
-                // ChangeUnit
+                // Get all units alives
+                // TODO: Sort them by SPEED
+                const unitsAlive = this.#units.filter(singleUnit => singleUnit.isAlive);
+                if (unitsAlive.length == 0) {
+                    // TODO: Should not appends, but in case...
+                    return;
+                }
+
+                // Add them into a queue
+                unitsAlive.forEach((singleUnit) => {
+                    // Reset the ActionPoint
+                    singleUnit.resetAp();
+
+                    this.#unitsQueue.push(singleUnit);
+                });
+
+                this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
             },
         });
 
         this.#stateMachine.addState({
             name: MAIN_STATES.CHANGE_UNIT,
             onEnter: () => {
-                // If no more units
-                // - TURN_END
+                // No more units
+                if (this.#unitsQueue.length == 0) {
+                    this.#stateMachine.setState(MAIN_STATES.TURN_END);
+                    return;
+                }
 
-                // Remove the first unit
-                // - If player - PLAYER_INPUT
-                // - else - ENEMY_INPUT
+                // Get the next one
+                this.#currentUnitQueue = this.#unitsQueue.shift();
+
+                if (this.#currentUnitQueue.type == UNIT_TYPES.PLAYER) {
+                    this.#stateMachine.setState(MAIN_STATES.PLAYER_INPUT);
+                    return;
+                }
+                
+                if (this.#currentUnitQueue.type == UNIT_TYPES.ENEMY) {
+                    this.#stateMachine.setState(MAIN_STATES.ENEMY_INPUT);
+                    return;
+                }
+
+                exhaustiveGuard(this.#currentUnitQueue.type);
             },
         });
 
         this.#stateMachine.addState({
             name: MAIN_STATES.PLAYER_INPUT,
             onEnter: () => {
-                // If no move left
-                // - CHANGE_UNIT
+                if (!this.#currentUnitQueue.hasAp) {
+                    this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                    return;
+                }
 
                 // Wait for move
+
             },
         });
 
         this.#stateMachine.addState({
             name: MAIN_STATES.ENEMY_INPUT,
             onEnter: () => {
-                // If no move left
-                // - CHANGE_UNIT
+                if (!this.#currentUnitQueue.hasAp) {
+                    this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                    return;
+                }
 
                 // Pick a move
             },
