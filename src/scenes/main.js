@@ -572,13 +572,16 @@ export class MainScene extends Phaser.Scene {
                     onComplete: () => {
                         defender.takeDamage(attacker.baseAttack);
                         
+                        // Update the player healthbar
                         if (defender.type === UNIT_TYPES.PLAYER) {
                             this.#panel.updateHealthBar(defender.currentHp, defender.maxHp);
                         }
 
-                        if (callback) {
-                            callback();
-                        }
+                        this.time.delayedCall(200, () => {
+                            if (callback) {
+                                callback();
+                            }
+                        });
                     }
                 });
             }
