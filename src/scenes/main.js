@@ -7,10 +7,6 @@ import { StateMachine } from "../state-machine.js";
 import { UNIT_ACTION_TYPES, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
 
-// Nothing selected
-// Player selected
-// actions visible
-// enemy selected
 
 const MAIN_STATES = Object.freeze({
     CREATE_MAP: 'CREATE_MAP',
@@ -18,9 +14,7 @@ const MAIN_STATES = Object.freeze({
     CHANGE_UNIT: 'CHANGE_UNIT',
     PLAYER_WAIT_FOR_SELECTION: 'PLAYER_WAIT_FOR_SELECTION',
     PLAYER_WAIT_FOR_ACTION: 'PLAYER_WAIT_FOR_ACTION',
-    PLAYER_APPLY_ACTION: 'PLAYER_APPLY_ACTION',
-    ENEMY_INPUT: 'ENEMY_INPUT',
-    ENEMY_APPLY_ACTION: 'ENEMY_APPLY_ACTION',
+    ENEMY_SELECT_ACTION: 'ENEMY_SELECT_ACTION',
     TURN_END: 'TURN_END',
 });
 
@@ -226,14 +220,16 @@ export class MainScene extends Phaser.Scene {
         this.#stateMachine.addState({
             name: MAIN_STATES.CHANGE_UNIT,
             onEnter: () => {
-                // No more units
-                if (this.#unitsQueue.length == 0) {
-                    this.#stateMachine.setState(MAIN_STATES.TURN_END);
-                    return;
-                }
+                // Pick a unit when no AP left or no unit picked
+                if (this.#currentUnitQueue === undefined || !this.#currentUnitQueue.hasAp) {
+                    // No more units left...
+                    if (this.#unitsQueue.length == 0) {
+                        this.#stateMachine.setState(MAIN_STATES.TURN_END);
+                        return;
+                    }
 
-                // Get the next one
-                this.#currentUnitQueue = this.#unitsQueue.shift();
+                    this.#currentUnitQueue = this.#unitsQueue.shift();
+                }
 
                 if (this.#currentUnitQueue.type == UNIT_TYPES.PLAYER) {
                     this.#selectUnit(this.#currentUnitQueue);
@@ -242,7 +238,7 @@ export class MainScene extends Phaser.Scene {
                 }
                 
                 if (this.#currentUnitQueue.type == UNIT_TYPES.ENEMY) {
-                    this.#stateMachine.setState(MAIN_STATES.ENEMY_INPUT);
+                    this.#stateMachine.setState(MAIN_STATES.ENEMY_SELECT_ACTION);
                     return;
                 }
 
@@ -268,20 +264,7 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#stateMachine.addState({
-            name: MAIN_STATES.PLAYER_APPLY_ACTION,
-            onEnter: () => {
-                if (!this.#currentUnitQueue.hasAp) {
-                    this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
-                    return;
-                }
-
-                this.#selectUnit(this.#currentUnitQueue);
-                this.#stateMachine.setState(MAIN_STATES.PLAYER_WAIT_FOR_ACTION);
-            },
-        });
-
-        this.#stateMachine.addState({
-            name: MAIN_STATES.ENEMY_INPUT,
+            name: MAIN_STATES.ENEMY_SELECT_ACTION,
             onEnter: () => {
                 if (!this.#currentUnitQueue.hasAp) {
                     this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
@@ -291,20 +274,8 @@ export class MainScene extends Phaser.Scene {
                 // Pick a move
                 this.#currentUnitQueue.useAp();
                 this.#currentUnitQueue.move(this.#currentUnitQueue.position.x + 1, this.#currentUnitQueue.position.y, () => {
-                    this.#stateMachine.setState(MAIN_STATES.ENEMY_APPLY_ACTION);
-                });
-            },
-        });
-
-        this.#stateMachine.addState({
-            name: MAIN_STATES.ENEMY_APPLY_ACTION,
-            onEnter: () => {
-                if (!this.#currentUnitQueue.hasAp) {
                     this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
-                    return;
-                }
-
-                this.#stateMachine.setState(MAIN_STATES.ENEMY_INPUT);
+                });
             },
         });
 
@@ -370,7 +341,7 @@ export class MainScene extends Phaser.Scene {
                             this.#unselectUnit();
 
                             this.#currentUnitQueue.move(newPosition.x, newPosition.y, () => {
-                                this.#stateMachine.setState(MAIN_STATES.PLAYER_APPLY_ACTION);
+                                this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
                             });
                         }
                     );
@@ -393,7 +364,7 @@ export class MainScene extends Phaser.Scene {
                             this.#unselectUnit();
                             console.log("ATTACK", this.#currentUnitQueue, unit);
                             this.time.delayedCall(1000, () => {
-                                this.#stateMachine.setState(MAIN_STATES.PLAYER_APPLY_ACTION);
+                                this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
                             });
                         }
                     );
