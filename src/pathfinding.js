@@ -60,8 +60,7 @@ export class Pathfinding {
         }
 
         let paths = [];
-
-        if (completePaths[`${endPosition.x}x${endPosition.y}`] === undefined) {
+        if (completePaths[`${endPosition.x}x${endPosition.y}`] !== undefined) {
             let current = endPosition;
             paths.push(current);
 
@@ -72,8 +71,8 @@ export class Pathfinding {
                 }
             }
         }
-
         paths.reverse();
+
         return paths;
     }
 
