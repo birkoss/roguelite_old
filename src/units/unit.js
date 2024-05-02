@@ -1,3 +1,4 @@
+import { MAP_ASSET_KEYS } from '../keys/asset.js';
 import Phaser from '../lib/phaser.js';
 
 /** @typedef {keyof typeof UNIT_TYPES} UnitTypes */
@@ -122,6 +123,10 @@ export class Unit {
         this._currentHp -= damage;
         if (this._currentHp < 0) {
             this._currentHp = 0;
+        }
+
+        if (!this.isAlive) {
+            this.gameObject.setTexture(MAP_ASSET_KEYS.EFFECTS_SMALL).setScale(1).setFrame(98);
         }
     }
 

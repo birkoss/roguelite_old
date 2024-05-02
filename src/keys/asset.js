@@ -1,6 +1,8 @@
 export const MAP_ASSET_KEYS = Object.freeze({
     WORLD: 'WORLD',
     UNITS: 'UNITS',
+    EFFECTS_SMALL: 'EFFECTS_SMALL',
+    EFFECTS_LARGE: 'EFFECTS_LARGE',
 });
 
 export const MAIN_UI_ASSET_KEYS = Object.freeze({

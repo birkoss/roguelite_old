@@ -15,8 +15,23 @@ export class PreloadScene extends Phaser.Scene {
         this.load.image(MAIN_UI_ASSET_KEYS.ATTACK_MELEE, 'assets/images/ui/attack_melee.png');
         this.load.image(MAIN_UI_ASSET_KEYS.MOVE, 'assets/images/ui/move.png');
 
-        this.load.spritesheet(MAP_ASSET_KEYS.WORLD, 'assets/tilesets/world.png', {frameWidth: 48, frameHeight: 48});
-        this.load.spritesheet(MAP_ASSET_KEYS.UNITS, 'assets/tilesets/units.png', {frameWidth: 24, frameHeight: 24});
+        this.load.spritesheet(MAP_ASSET_KEYS.WORLD, 'assets/tilesets/world.png', {
+            frameWidth: 48,
+            frameHeight: 48,
+        });
+        this.load.spritesheet(MAP_ASSET_KEYS.UNITS, 'assets/tilesets/units.png', {
+            frameWidth: 24,
+            frameHeight: 24,
+        });
+
+        this.load.spritesheet(MAP_ASSET_KEYS.EFFECTS_LARGE, 'assets/tilesets/effects-large.png', {
+            frameWidth: 64,
+            frameHeight: 64,
+        });
+        this.load.spritesheet(MAP_ASSET_KEYS.EFFECTS_SMALL, 'assets/tilesets/effects-small.png', {
+            frameWidth: 48,
+            frameHeight: 48,
+        });
     }
 
     create() {
