@@ -392,6 +392,7 @@ export class MainScene extends Phaser.Scene {
 
         this.#selectedUnit = unit;
 
+        // Create an overlay to unselect the unit
         this.#createOverlay(
             unit.gameObject.x,
             unit.gameObject.y,
@@ -402,6 +403,7 @@ export class MainScene extends Phaser.Scene {
             }
         );
 
+        // Create player action
         if (unit.type === UNIT_TYPES.PLAYER) {
             unit.actions.forEach((singleAction) => {
                 const newPosition = {
@@ -420,8 +422,8 @@ export class MainScene extends Phaser.Scene {
                         return;
                     }
 
-                    // Can't move over an enemy
-                    let enemy = this.#units.filter(singleUnit => singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
+                    // Can't move over an alive enemy
+                    let enemy = this.#units.filter(singleUnit => singleUnit.isAlive && singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
                     if (enemy.length > 0) {
                         return;
                     }
@@ -442,9 +444,10 @@ export class MainScene extends Phaser.Scene {
                     );
                     return;
                 }
+
                 if (singleAction.type === UNIT_ACTION_TYPES.ATTACK_MELEE) {
                     // Need an ennemy to attack
-                    let enemy = this.#units.filter(singleUnit => singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
+                    let enemy = this.#units.filter(singleUnit => singleUnit.isAlive && singleUnit.position.x === newPosition.x && singleUnit.position.y == newPosition.y);
                     if (enemy.length === 0) {
                         return;
                     }
@@ -470,6 +473,7 @@ export class MainScene extends Phaser.Scene {
             return;
         }
         
+        // Show unit information
         if (unit.type === UNIT_TYPES.ENEMY) {
             console.log("SHOW STATUS: ", unit);
             return;
