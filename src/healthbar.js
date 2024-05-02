@@ -63,8 +63,6 @@ export class HealthBar {
     setWidthAnimated(percent, options) {
         const width = this.#fullWidth * Math.min(Math.max(percent, 0), 1);
 
-
-
         this.#scene.tweens.add({
             targets: this.#middleGameObject,
             displayWidth: width,

@@ -13,7 +13,6 @@ import { Panel } from "../panel.js";
 const MAIN_STATES = Object.freeze({
     CREATE_MAP: 'CREATE_MAP',
     TURN_START: 'TURN_START',                                   // Build the Units Queue
-
     UNIT_START: 'UNIT_START',                                   // Wait for Action or Pick new Unit
     UNIT_WAIT_SELECTION: 'UNIT_WAIT_SELECTION',                 // Wait for a Player Selection
     UNIT_WAIT_ACTION: 'UNIT_WAIT_ACTION',                       // Wait for a Player action
@@ -161,7 +160,7 @@ export class MainScene extends Phaser.Scene {
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
-                maxAp: 1,
+                maxAp: 3,
                 currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
@@ -178,7 +177,7 @@ export class MainScene extends Phaser.Scene {
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
-                maxAp: 1,
+                maxAp: 2,
                 currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
@@ -339,6 +338,7 @@ export class MainScene extends Phaser.Scene {
                 // ----------------------------------------
 
                 // Get an array for the map (0 = Empty, 1 = Blocked)
+                // TODO: 2 = Unit, 3 = Floor that can be cross by flying unit
                 let grid = this.#map.export();
                 // Disable enemy position in the grid
                 this.#units.forEach((singleUnit) => {
@@ -571,7 +571,11 @@ export class MainScene extends Phaser.Scene {
                     ease: Phaser.Math.Easing.Sine.Out,
                     onComplete: () => {
                         defender.takeDamage(attacker.baseAttack);
-                        console.log("ATTACK DONE");
+                        
+                        if (defender.type === UNIT_TYPES.PLAYER) {
+                            this.#panel.updateHealthBar(defender.currentHp, defender.maxHp);
+                        }
+
                         if (callback) {
                             callback();
                         }
