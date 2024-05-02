@@ -6,7 +6,7 @@ import { PreloadScene } from './scenes/preload.js';
 import { MainScene } from './scenes/main.js';
 
 const game = new Phaser.Game({
-    type: Phaser.CANVAS,
+    type: Phaser.AUTO,
     pixelArt: true,
     scale: {
         parent: 'game-container',

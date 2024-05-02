@@ -23,6 +23,10 @@ export class PreloadScene extends Phaser.Scene {
         this.load.image(PANEL_UI_ASSET_KEYS.SHADOW_MIDDLE, 'assets/images/ui/shadow-middle.png');
         this.load.image(PANEL_UI_ASSET_KEYS.SHADOW_RIGHT, 'assets/images/ui/shadow-right.png');
 
+        this.load.spritesheet(MAIN_UI_ASSET_KEYS.ACTIONS, 'assets/tilesets/actions.png', {
+            frameWidth: 40,
+            frameHeight: 40,
+        });
         this.load.spritesheet(MAP_ASSET_KEYS.WORLD, 'assets/tilesets/world.png', {
             frameWidth: 48,
             frameHeight: 48,

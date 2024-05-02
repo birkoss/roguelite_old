@@ -495,10 +495,10 @@ export class MainScene extends Phaser.Scene {
                         return;
                     }
 
-                    this.#createOverlay(
+                    let attack = this.#createOverlay(
                         unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
                         unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
-                        MAIN_UI_ASSET_KEYS.ATTACK_MELEE,
+                        MAIN_UI_ASSET_KEYS.ACTIONS,
                         () => {
                             this.#unselectUnit();
 
@@ -507,6 +507,17 @@ export class MainScene extends Phaser.Scene {
                             }); 
                         }
                     );
+                    // attack.setAlpha(0.8);
+                    this.tweens.add({
+                        targets: attack,
+                        scaleX: 0.5,
+                        scaleY: 0.5,
+                        // alpha: 1,
+                        yoyo: true,
+                        repeat: -1,
+                        duration: 1200,
+                        ease: Phaser.Math.Easing.Sine.InOut,
+                    });
                     return;
                 }
 

@@ -9,6 +9,7 @@ export const MAIN_UI_ASSET_KEYS = Object.freeze({
     SELECTED_UNIT: 'SELECTED_UNIT',
     MOVE: 'MOVE',
     ATTACK_MELEE: 'ATTACK_MELEE',
+    ACTIONS: 'ACTIONS',
 });
 
 export const PANEL_UI_ASSET_KEYS = Object.freeze({
