@@ -1,3 +1,4 @@
+import { HealthBar } from "./healthbar.js";
 import Phaser from "./lib/phaser.js";
 
 export class Panel {
@@ -8,6 +9,8 @@ export class Panel {
     #container;
     /** @type {Phaser.GameObjects.Text} */
     #textName;
+    /** @type {HealthBar} */
+    #healthBar;
 
     constructor(scene) {
         this.#scene = scene;
@@ -30,6 +33,8 @@ export class Panel {
     #createPanel() {
         this.#textName = this.#scene.add.text(0, 0, 'XXXXXXXXX');
 
-        this.#container = this.#scene.add.container(0, 0, [this.#textName]);
+        this.#healthBar = new HealthBar(this.#scene, 0, 100, 200);
+
+        this.#container = this.#scene.add.container(0, 0, [this.#textName, this.#healthBar.container]);
     }
 }
