@@ -47,6 +47,16 @@ export class Map {
         return [...this.#tiles];
     }
 
+    /** @type {number} */
+    get width() {
+        return this.#width;
+    }
+
+    /** @type {number} */
+    get height() {
+        return this.#height;
+    }
+
     /**
      * 
      * @param {number} x 
@@ -65,7 +75,13 @@ export class Map {
     }
 
     /**
-     * 
+     * @returns {number[]}
+     */
+    export() {
+        return this.#tiles.map(singleTile => singleTile.isWalkable ? 0 : 1);
+    }
+
+    /**
      * @param {import('./types/typedef.js').Coordinate} position1 
      * @param {import('./types/typedef.js').Coordinate} position2 
      * @returns {number}
