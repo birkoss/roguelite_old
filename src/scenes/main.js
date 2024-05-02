@@ -208,7 +208,9 @@ export class MainScene extends Phaser.Scene {
         this.#panel.container.setPosition(0, 0);
 
         let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
-        this.#panel.updateName(player.name);
+        this.#panel.updateName(player.name);    
+        this.#panel.updateHealthBar(player.currentHp, player.maxHp);
+        console.log(player);
     }
 
     #createStateMachine() {

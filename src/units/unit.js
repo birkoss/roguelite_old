@@ -118,6 +118,16 @@ export class Unit {
     }
 
     /** @type {number} */
+    get currentHp() {
+        return this._currentHp;
+    }
+
+    /** @type {number} */
+    get maxHp() {
+        return this._maxHp;
+    }
+
+    /** @type {number} */
     get baseAttack() {
         return this._unitDetails.baseAttack;
     }

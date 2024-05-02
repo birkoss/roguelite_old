@@ -30,6 +30,16 @@ export class Panel {
         this.#textName.setText(name);
     }
 
+    /**
+     * @param {number} current 
+     * @param {number} max 
+     */
+    updateHealthBar(current, max) {
+        console.log(current, max);
+        this.#healthBar.setText(`${current}/${max}`);
+        this.#healthBar.setWidthAnimated(current / max);
+    }
+
     #createPanel() {
         this.#textName = this.#scene.add.text(0, 0, 'XXXXXXXXX');
 

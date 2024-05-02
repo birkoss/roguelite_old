@@ -19,6 +19,9 @@ export class HealthBar {
     /** @type {Phaser.GameObjects.Image} */
     #rightGameObject;
 
+    /** @type {Phaser.GameObjects.Text} */
+    #text;
+
     /**
      * @param {Phaser.Scene} scene 
      * @param {number} x 
@@ -32,8 +35,14 @@ export class HealthBar {
         this.#container = this.#scene.add.container(x, y);
 
         this.#createHealthbar();
+
+        this.#text = this.#scene.add.text((this.#fullWidth / 2) + this.#middleGameObject.x, 0, 'X', {
+            color: 'white',
+            fontSize: '12px',
+        }).setOrigin(0.5);
+        this.#container.add(this.#text);
+
         this.#setWidth(1);
-        this.setWidthAnimated(0.5);
     }
 
     /** @type {Phaser.GameObjects.Container} */
@@ -42,27 +51,36 @@ export class HealthBar {
     }
 
     /**
+     * @param {string} text 
+     */
+    setText(text) {
+        this.#text.setText(text);
+    }
+
+    /**
      * @param {number} percent - Between 0 and 1
      */
     setWidthAnimated(percent, options) {
-    const width = this.#fullWidth * percent;
+        const width = this.#fullWidth * Math.min(Math.max(percent, 0), 1);
 
-    this.#scene.tweens.add({
-        targets: this.#middleGameObject,
-        displayWidth: width,
-        duration: options?.duration || 1000,
-        ease: Phaser.Math.Easing.Sine.Out,
-        onUpdate: () => {
-            this.#rightGameObject.setX(this.#middleGameObject.x + this.#middleGameObject.displayWidth);
-            
-            const isVisible = this.#middleGameObject.displayWidth > 0;
-            this.#leftGameObject.visible = isVisible;
-            this.#middleGameObject.visible = isVisible;
-            this.#rightGameObject.visible = isVisible;
-        },
-        onComplete: options?.callback,
-    });
-}
+
+
+        this.#scene.tweens.add({
+            targets: this.#middleGameObject,
+            displayWidth: width,
+            duration: options?.duration || 1000,
+            ease: Phaser.Math.Easing.Sine.Out,
+            onUpdate: () => {
+                this.#rightGameObject.setX(this.#middleGameObject.x + this.#middleGameObject.displayWidth);
+                
+                const isVisible = this.#middleGameObject.displayWidth > 0;
+                this.#leftGameObject.visible = isVisible;
+                this.#middleGameObject.visible = isVisible;
+                this.#rightGameObject.visible = isVisible;
+            },
+            onComplete: options?.callback,
+        });
+    }
 
     #createHealthbar() {
         let leftShadowGameObject = this.#scene.add.image(0, 0, PANEL_UI_ASSET_KEYS.SHADOW_LEFT).setOrigin(0, 0.5);
