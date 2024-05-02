@@ -235,8 +235,9 @@ export class MainScene extends Phaser.Scene {
                     this.#unitsQueue.push(singleUnit);
                 });
 
-                // Pick the first unit
-                this.#currentUnitQueue = this.#unitsQueue.shift();
+                // Pick the next unit
+                console.log(this);
+                this.#pickNextUnit();
 
                 this.#stateMachine.setState(MAIN_STATES.UNIT_START);
             },
@@ -260,7 +261,8 @@ export class MainScene extends Phaser.Scene {
 
                 // Unit is done and pick a new unit
                 if (!this.#currentUnitQueue.hasAp) {
-                    this.#currentUnitQueue = this.#unitsQueue.shift();
+                    // Pick the next unit
+                    this.#pickNextUnit();
                 }
 
                 // Current unit is a player
@@ -382,6 +384,15 @@ export class MainScene extends Phaser.Scene {
         });
 
         this.#stateMachine.setState(MAIN_STATES.CREATE_MAP);
+    }
+
+    #pickNextUnit() {
+        this.#currentUnitQueue = this.#unitsQueue.shift();
+
+        // If the unit is alive, bring it on top of other units
+        if (this.#currentUnitQueue.isAlive) {
+            this.#mapContainer.bringToTop(this.#currentUnitQueue.gameObject);
+        }
     }
 
     /**
