@@ -81,6 +81,12 @@ export class MainScene extends Phaser.Scene {
             new Phaser.Geom.Rectangle(0, 0, this.#mapContainer.getBounds().width, this.#mapContainer.getBounds().height),
             Phaser.Geom.Rectangle.Contains
         );
+        this.#mapContainer.on('pointerdown', (target) => {
+            let x = Math.floor((target.worldX - this.#mapContainer.x) / 48);
+            let y = Math.floor((target.worldY - this.#mapContainer.y) / 48);
+
+            this.#clickOnTile(x, y);
+        });
 
         this.#mapOverlayContainer = this.add.container(0, 0);
         this.#mapOverlayContainer.x = this.#mapContainer.x;
@@ -191,15 +197,15 @@ export class MainScene extends Phaser.Scene {
         this.#units.push(enemy);
         this.#units.push(enemy2);
 
-        this.#units.forEach((singleUnit) => {
-            singleUnit.gameObject.setInteractive();
-            singleUnit.gameObject.on('pointerdown', () => {
-                if (this.#stateMachine.currentStateName === MAIN_STATES.UNIT_WAIT_SELECTION) {
-                    this.#selectUnit(singleUnit);
-                    this.#stateMachine.setState(MAIN_STATES.UNIT_WAIT_ACTION);
-                }
-            });
-        });
+        // this.#units.forEach((singleUnit) => {
+        //     singleUnit.gameObject.setInteractive();
+        //     singleUnit.gameObject.on('pointerdown', () => {
+        //         if (this.#stateMachine.currentStateName === MAIN_STATES.UNIT_WAIT_SELECTION) {
+        //             this.#selectUnit(singleUnit);
+        //             this.#stateMachine.setState(MAIN_STATES.UNIT_WAIT_ACTION);
+        //         }
+        //     });
+        // });
     }
 
     #createPanel() {
@@ -434,15 +440,11 @@ export class MainScene extends Phaser.Scene {
 
         this.#selectedUnit = unit;
 
-        // Create an overlay to unselect the unit
+        // Create an overlay to show the selected unit
         this.#createOverlay(
             unit.gameObject.x,
             unit.gameObject.y,
             MAIN_UI_ASSET_KEYS.SELECTED_UNIT,
-            () => {
-                this.#unselectUnit();
-                this.#stateMachine.setState(MAIN_STATES.UNIT_WAIT_SELECTION);
-            }
         );
 
         // Create player action
@@ -470,21 +472,28 @@ export class MainScene extends Phaser.Scene {
                         return;
                     }
                     
-                    this.#createOverlay(
-                        unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
-                        unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
-                        MAIN_UI_ASSET_KEYS.MOVE,
-                        () => {
-                            this.#selectedUnit.useAp();
-                            this.#refreshPanel();
+                    // this.#createOverlay(
+                    //     unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
+                    //     unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
+                    //     MAIN_UI_ASSET_KEYS.MOVE,
+                    //     () => {
+                    //         this.#selectedUnit.useAp();
+                    //         this.#refreshPanel();
 
-                            this.#unselectUnit();
+                    //         this.#unselectUnit();
 
-                            this.#currentUnitQueue.move(newPosition.x, newPosition.y, () => {
-                                this.#stateMachine.setState(MAIN_STATES.UNIT_END);
-                            });
-                        }
-                    );
+                    //         this.#currentUnitQueue.move(newPosition.x, newPosition.y, () => {
+                    //             this.#stateMachine.setState(MAIN_STATES.UNIT_END);
+                    //         });
+                    //     }
+                    // );
+
+                    let x = unit.position.x + singleAction.position.x;
+                    let y = unit.position.y + singleAction.position.y;
+                    let index = (y * this.#map.width) + x;
+
+                    this.#mapContainer.getAt(index).setTint(0x00FF00);
+
                     return;
                 }
 
@@ -495,29 +504,35 @@ export class MainScene extends Phaser.Scene {
                         return;
                     }
 
-                    let attack = this.#createOverlay(
-                        unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
-                        unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
-                        MAIN_UI_ASSET_KEYS.ACTIONS,
-                        () => {
-                            this.#unselectUnit();
+                    let x = unit.position.x + singleAction.position.x;
+                    let y = unit.position.y + singleAction.position.y;
+                    let index = (y * this.#map.width) + x;
 
-                            this.#attack_melee(this.#currentUnitQueue, enemy[0], () => {
-                                this.#stateMachine.setState(MAIN_STATES.UNIT_END);
-                            }); 
-                        }
-                    );
+                    this.#mapContainer.getAt(index).setTint(0xFF0000);
+
+                    // let attack = this.#createOverlay(
+                    //     unit.gameObject.x+(singleAction.position.x * unit.gameObject.displayWidth),
+                    //     unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
+                    //     MAIN_UI_ASSET_KEYS.ACTIONS,
+                    //     () => {
+                    //         this.#unselectUnit();
+
+                    //         this.#attack_melee(this.#currentUnitQueue, enemy[0], () => {
+                    //             this.#stateMachine.setState(MAIN_STATES.UNIT_END);
+                    //         }); 
+                    //     }
+                    // );
                     // attack.setAlpha(0.8);
-                    this.tweens.add({
-                        targets: attack,
-                        scaleX: 0.5,
-                        scaleY: 0.5,
-                        // alpha: 1,
-                        yoyo: true,
-                        repeat: -1,
-                        duration: 1200,
-                        ease: Phaser.Math.Easing.Sine.InOut,
-                    });
+                    // this.tweens.add({
+                    //     targets: attack,
+                    //     scaleX: 0.5,
+                    //     scaleY: 0.5,
+                    //     // alpha: 1,
+                    //     yoyo: true,
+                    //     repeat: -1,
+                    //     duration: 1200,
+                    //     ease: Phaser.Math.Easing.Sine.InOut,
+                    // });
                     return;
                 }
 
@@ -541,6 +556,7 @@ export class MainScene extends Phaser.Scene {
             this.#mapOverlayContainer.getAll().forEach((singleOverlay) => {
                 singleOverlay.destroy();
             });
+            this.#mapContainer.getAll().forEach(singleTile => singleTile.setTint(0xFFFFFF));
             this.#selectedUnit = undefined;
         }
     }
@@ -635,5 +651,58 @@ export class MainScene extends Phaser.Scene {
 
         this.#panel.updateHealthBar(player.currentHp, player.maxHp);
         this.#panel.updateActionPoints(player.currentAp, player.maxAp);
+    }
+
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     */
+    #clickOnTile(x, y) {
+        console.log(`${x}x${y}`);
+
+        console.log(this.#stateMachine.currentStateName);
+
+        if (this.#stateMachine.currentStateName === MAIN_STATES.UNIT_WAIT_ACTION) {
+            // Unselect the selected unit
+            let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y).shift();
+            if (unit === this.#selectedUnit) {
+                this.#unselectUnit();
+                this.#stateMachine.setState(MAIN_STATES.UNIT_WAIT_SELECTION);
+                return;
+            }
+
+            let index = (y * this.#map.width) + x;
+            if (this.#mapContainer.getAt(index).tint === 0x00FF00) {
+                this.#selectedUnit.useAp();
+                this.#refreshPanel();
+
+                this.#unselectUnit();
+
+                this.#currentUnitQueue.move(x, y, () => {
+                    this.#stateMachine.setState(MAIN_STATES.UNIT_END);
+                });
+                return;
+            }
+
+            if (this.#mapContainer.getAt(index).tint === 0xFF0000) {
+                this.#unselectUnit();
+
+                this.#attack_melee(this.#currentUnitQueue, unit, () => {
+                    this.#stateMachine.setState(MAIN_STATES.UNIT_END);
+                });
+                return;
+            }
+
+            return;
+        }
+        if (this.#stateMachine.currentStateName === MAIN_STATES.UNIT_WAIT_SELECTION) {
+            let unit = this.#units.filter(singleUnit => singleUnit.position.x === x && singleUnit.position.y === y).shift();
+            if (unit !== undefined) {
+                this.#selectUnit(unit);
+                this.#stateMachine.setState(MAIN_STATES.UNIT_WAIT_ACTION);
+            }
+
+            return;
+        }
     }
 }
