@@ -15,6 +15,13 @@ export const UNIT_ACTION_TYPES = Object.freeze({
     ATTACK_MELEE: 'ATTACK_MELEE',
 });
 
+/** @typedef {keyof typeof UNIT_DIRECTION} UnitDirection */
+/** @enum {UnitDirection} */
+export const UNIT_DIRECTION = Object.freeze({
+    LEFT: 'LEFT',
+    RIGHT: 'RIGHT',
+});
+
 export class Unit {
     /** @protected @type {Phaser.Scene} */
     _scene;
@@ -24,6 +31,9 @@ export class Unit {
 
     /** @protected @type {UNIT_TYPES} */
     _type;
+
+    /** @protected @type {UNIT_DIRECTION} */
+    _direction;
 
     /** @protected @type {Phaser.GameObjects.Image} */
     _phaserGameObject;
@@ -54,6 +64,8 @@ export class Unit {
         this._scene = config.scene;
         this._position = position;
         this._unitDetails = config.unitDetails;
+
+        this._direction = UNIT_DIRECTION.LEFT;
 
         this._currentHp = this._unitDetails.currentHp;
         this._maxHp = this._unitDetails.maxHp;
@@ -135,6 +147,18 @@ export class Unit {
         }
     }
 
+    /**
+     * @param {UNIT_DIRECTION} direction 
+     */
+    face(direction) {
+        if (this._direction === direction) {
+            return;
+        }
+
+        this._direction = direction;
+        this._phaserGameObject.setFlipX(this._direction === UNIT_DIRECTION.RIGHT);
+    }
+
     resetAp() {
         this._currentAp = this._maxAp;
     }
@@ -147,6 +171,12 @@ export class Unit {
     }
 
     move(x, y, callback) {
+        if (x < this.position.x) {
+            this.face(UNIT_DIRECTION.LEFT);
+        } else if (x > this.position.x) {
+            this.face(UNIT_DIRECTION.RIGHT);
+        }
+
         this.position.x = x;
         this.position.y = y;
 
