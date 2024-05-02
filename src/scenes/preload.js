@@ -23,7 +23,6 @@ export class PreloadScene extends Phaser.Scene {
             frameWidth: 24,
             frameHeight: 24,
         });
-
         this.load.spritesheet(MAP_ASSET_KEYS.EFFECTS_LARGE, 'assets/tilesets/effects-large.png', {
             frameWidth: 64,
             frameHeight: 64,
