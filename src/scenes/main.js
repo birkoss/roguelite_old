@@ -4,7 +4,7 @@ import { SCENE_KEYS } from "../keys/scene.js";
 import { Map, TILE_TYPE } from "../map.js";
 import { MAIN_UI_ASSET_KEYS, MAP_ASSET_KEYS } from "../keys/asset.js";
 import { StateMachine } from "../state-machine.js";
-import { UNIT_ACTION_TYPES, UNIT_TYPES, Unit } from "../units/unit.js";
+import { UNIT_ACTION_TYPES, UNIT_DIRECTION, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
 import { Pathfinding } from "../pathfinding.js";
 
@@ -147,7 +147,7 @@ export class MainScene extends Phaser.Scene {
                     }
                 }],
             }
-        }, { x: 1, y: 1 });
+        }, { x: 3, y: 1 });
         this.#mapContainer.add(player.gameObject);
 
         const enemy = new Unit(UNIT_TYPES.ENEMY, {
@@ -236,7 +236,6 @@ export class MainScene extends Phaser.Scene {
                 });
 
                 // Pick the next unit
-                console.log(this);
                 this.#pickNextUnit();
 
                 this.#stateMachine.setState(MAIN_STATES.UNIT_START);
@@ -528,6 +527,13 @@ export class MainScene extends Phaser.Scene {
      * @param {() => void} [callback]
      */
     #attack_melee(attacker, defender, callback) {
+        // Face forward the defender
+        if (attacker.position.x < defender.position.x) {
+            attacker.face(UNIT_DIRECTION.RIGHT);
+        } else if (attacker.position.x > attacker.position.x) {
+            attacker.face(UNIT_DIRECTION.LEFT);
+        }
+
         attacker.useAp();
 
         var originalPosition = {
