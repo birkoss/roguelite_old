@@ -7,6 +7,7 @@ import { StateMachine } from "../state-machine.js";
 import { UNIT_ACTION_TYPES, UNIT_DIRECTION, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
 import { Pathfinding } from "../pathfinding.js";
+import { Panel } from "../panel.js";
 
 
 const MAIN_STATES = Object.freeze({
@@ -29,6 +30,9 @@ export class MainScene extends Phaser.Scene {
     #mapContainer;
     /** @type {Phaser.GameObjects.Container} */
     #mapOverlayContainer;
+
+    /** @type {Panel} */
+    #panel;
 
     /** @type {StateMachine} */
     #stateMachine;
@@ -199,6 +203,14 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
+    #createPanel() {
+        this.#panel = new Panel(this);
+        this.#panel.container.setPosition(0, 0);
+
+        let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
+        this.#panel.updateName(player.name);
+    }
+
     #createStateMachine() {
         this.#stateMachine = new StateMachine('MAIN', this);
 
@@ -206,8 +218,8 @@ export class MainScene extends Phaser.Scene {
             name: MAIN_STATES.CREATE_MAP,
             onEnter: () => {
                 this.#createMap();
-
                 this.#createUnits();
+                this.#createPanel();
 
                 this.time.delayedCall(500, () => {
                     this.#stateMachine.setState(MAIN_STATES.TURN_START);
