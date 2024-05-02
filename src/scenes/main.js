@@ -6,6 +6,7 @@ import { MAIN_UI_ASSET_KEYS, MAP_ASSET_KEYS } from "../keys/asset.js";
 import { StateMachine } from "../state-machine.js";
 import { UNIT_ACTION_TYPES, UNIT_TYPES, Unit } from "../units/unit.js";
 import { exhaustiveGuard } from "../utils/guard.js";
+import { Pathfinding } from "../pathfinding.js";
 
 
 const MAIN_STATES = Object.freeze({
@@ -143,7 +144,7 @@ export class MainScene extends Phaser.Scene {
                     }
                 }],
             }
-        }, { x: 2, y: 2 });
+        }, { x: 1, y: 1 });
         this.#mapContainer.add(player.gameObject);
 
         const enemy = new Unit(UNIT_TYPES.ENEMY, {
@@ -160,11 +161,29 @@ export class MainScene extends Phaser.Scene {
                 assetFrame: 290,
                 actions: [],
             }
-        }, { x: 1, y: 2 });
+        }, { x: 2, y: 2 });
         this.#mapContainer.add(enemy.gameObject);
 
-        this.#units.push(enemy);
+        const enemy2 = new Unit(UNIT_TYPES.ENEMY, {
+            scene: this,
+            unitDetails: {
+                name: 'Ghost',
+                currentLevel: 1,
+                maxHp: 10,
+                currentHp: 10,
+                maxAp: 1,
+                currentAp: 0,
+                baseAttack: 5,
+                assetKey: MAP_ASSET_KEYS.UNITS,
+                assetFrame: 294,
+                actions: [],
+            }
+        }, { x: 2, y: 1 });
+        this.#mapContainer.add(enemy2.gameObject);
+
         this.#units.push(player);
+        this.#units.push(enemy);
+        this.#units.push(enemy2);
 
         this.#units.forEach((singleUnit) => {
             singleUnit.gameObject.setInteractive();
@@ -273,9 +292,10 @@ export class MainScene extends Phaser.Scene {
                     return;
                 }
 
-                const player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
+                let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
 
                 // Can attack the player ?
+                // ----------------------------------------
                 const distanceBetweenPlayer = this.#map.getDistanceBetween(this.#currentUnitQueue.position, player.position);
                 if (distanceBetweenPlayer == 1) {
                     this.#attack_melee(this.#currentUnitQueue, player, () => {
@@ -284,38 +304,43 @@ export class MainScene extends Phaser.Scene {
                     return;
                 }
 
-                // Get next move between the player
-                // Pick a move
+                // Try to move closer to the player
+                // ----------------------------------------
 
-                
-                // let diff = this.map.getDistanceBetweenUnit(this.map.player, single_enemy);
-
-                // if (diff == 1) {
-                //     this.cameras.main.shake(500);
-                //     this.attackUnit(single_enemy, this.map.player, this.nextTurn);
-                // } else {
-                //     let pf = new Pathfinding(this.map.export(), this.map.config.width, this.map.config.height);
-                //     let tiles = pf.find({
-                //         x: single_enemy.gridX,
-                //         y: single_enemy.gridY
-                //     }, {
-                //         x: this.map.player.gridX,
-                //         y: this.map.player.gridY
-                //     });
-        
-                //     if (tiles.length > 1) {
-                //         let neighboor = tiles[0];
-                //         single_enemy.move(neighboor.x, neighboor.y);
-                //     } else {
-                //         this.nextTurn();
-                //     }
-                // }
-
-                // Move closer to the player
-                this.#currentUnitQueue.useAp();
-                this.#currentUnitQueue.move(this.#currentUnitQueue.position.x + 1, this.#currentUnitQueue.position.y, () => {
-                    this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                // Get an array for the map (0 = Empty, 1 = Blocked)
+                let grid = this.#map.export();
+                // Disable enemy position in the grid
+                this.#units.forEach((singleUnit) => {
+                    // Don't care about dead unit...
+                    if (!singleUnit.isAlive) {
+                        return;
+                    }
+                    // Don't care about Player
+                    if (singleUnit.type === UNIT_TYPES.PLAYER) {
+                        return;
+                    }
+                    grid[(singleUnit.position.y * this.#map.width) + singleUnit.position.x] = 1;
                 });
+
+                // Get the paths between the unit and the player
+                let pathFinding = new Pathfinding(grid, this.#map.width, this.#map.height);
+                let paths = pathFinding.find(this.#currentUnitQueue.position, player.position);
+
+                if (paths.length > 0) {
+                    let nextPosition = paths.shift();
+
+                    this.#currentUnitQueue.useAp();
+                    this.#currentUnitQueue.move(nextPosition.x, nextPosition.y, () => {
+                        this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                    });
+                    return;
+                }
+
+                // Nothing to do? Waste the current AP
+                // ----------------------------------------
+                console.error(`${this.#currentUnitQueue.name} had nothing to do. Wasted an AP...`);
+                this.#currentUnitQueue.useAp();
+                this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
             },
         });
 
@@ -481,6 +506,7 @@ export class MainScene extends Phaser.Scene {
                     ease: Phaser.Math.Easing.Sine.Out,
                     onComplete: () => {
                         defender.takeDamage(attacker.baseAttack);
+                        console.log("ATTACK DONE");
                         this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
                     }
                 });
