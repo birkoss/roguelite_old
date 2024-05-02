@@ -126,6 +126,7 @@ export class Unit {
         }
 
         if (!this.isAlive) {
+            this._currentAp = 0;
             this.gameObject.setTexture(MAP_ASSET_KEYS.EFFECTS_SMALL).setScale(1).setFrame(98);
         }
     }

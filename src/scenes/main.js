@@ -17,6 +17,7 @@ const MAIN_STATES = Object.freeze({
     PLAYER_WAIT_FOR_ACTION: 'PLAYER_WAIT_FOR_ACTION',
     ENEMY_SELECT_ACTION: 'ENEMY_SELECT_ACTION',
     TURN_END: 'TURN_END',
+    GAME_OVER: 'GAME_OVER',
 });
 
 export class MainScene extends Phaser.Scene {
@@ -88,10 +89,10 @@ export class MainScene extends Phaser.Scene {
                 name: 'Knight',
                 currentLevel: 1,
                 maxHp: 10,
-                currentHp: 10,
+                currentHp: 100,
                 maxAp: 1,
                 currentAp: 0,
-                baseAttack: 5,
+                baseAttack: 10,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 0,
                 actions: [{
@@ -241,6 +242,13 @@ export class MainScene extends Phaser.Scene {
         this.#stateMachine.addState({
             name: MAIN_STATES.CHANGE_UNIT,
             onEnter: () => {
+                // The player is dead
+                let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
+                if (!player.isAlive) {
+                    this.#stateMachine.setState(MAIN_STATES.GAME_OVER);
+                    return;
+                }
+
                 // Pick a unit when no AP left or no unit picked
                 if (this.#currentUnitQueue === undefined || !this.#currentUnitQueue.hasAp) {
                     // No more units left...
@@ -348,6 +356,13 @@ export class MainScene extends Phaser.Scene {
             name: MAIN_STATES.TURN_END,
             onEnter: () => {
                 this.#stateMachine.setState(MAIN_STATES.TURN_START);
+            },
+        });
+
+        this.#stateMachine.addState({
+            name: MAIN_STATES.GAME_OVER,
+            onEnter: () => {
+                console.error('YOU ARE DEAD');
             },
         });
 
