@@ -84,7 +84,7 @@ export class MainScene extends Phaser.Scene {
         const player = new Unit(UNIT_TYPES.PLAYER, {
             scene: this,
             unitDetails: {
-                name: 'Archer',
+                name: 'Knight',
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
@@ -143,7 +143,7 @@ export class MainScene extends Phaser.Scene {
                     }
                 }],
             }
-        }, { x: 1, y: 1 });
+        }, { x: 2, y: 2 });
         this.#mapContainer.add(player.gameObject);
         this.#units.push(player);
 
@@ -154,7 +154,7 @@ export class MainScene extends Phaser.Scene {
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
-                maxAp: 3,
+                maxAp: 1,
                 currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
@@ -359,13 +359,11 @@ export class MainScene extends Phaser.Scene {
                         unit.gameObject.y+(singleAction.position.y * unit.gameObject.displayHeight),
                         MAIN_UI_ASSET_KEYS.ATTACK_MELEE,
                         () => {
-                            this.#selectedUnit.useAp();
-                            
                             this.#unselectUnit();
-                            console.log("ATTACK", this.#currentUnitQueue, unit);
-                            this.time.delayedCall(1000, () => {
+
+                            this.#attack_melee(this.#currentUnitQueue, enemy[0], () => {
                                 this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
-                            });
+                            }); 
                         }
                     );
                     return;
@@ -395,10 +393,10 @@ export class MainScene extends Phaser.Scene {
     }
 
     /**
-     * 
      * @param {number} x 
      * @param {number} y 
      * @param {string} assetKey 
+     * @param {() => void} [callback] - Set the callback on pointerdown
      * @return {Phaser.GameObjects.Image}
      */
     #createOverlay(x, y, assetKey, callback) {
@@ -412,5 +410,41 @@ export class MainScene extends Phaser.Scene {
         }
 
         return image;
+    }
+
+    /**
+     * @param {Unit} attacker 
+     * @param {Unit} defender 
+     * @param {() => void} [callback]
+     */
+    #attack_melee(attacker, defender, callback) {
+        attacker.useAp();
+
+        var originalPosition = {
+            x: attacker.gameObject.x,
+            y: attacker.gameObject.y,
+        }
+
+        this.tweens.add({
+            targets: attacker.gameObject,
+            x: (attacker.gameObject.x + defender.gameObject.x) / 2,
+            y: (attacker.gameObject.y + defender.gameObject.y) / 2,
+            duration: 200,
+            ease: Phaser.Math.Easing.Sine.Out,
+            onComplete: () => {
+                // TODO: Animation
+                this.tweens.add({
+                    targets: attacker.gameObject,
+                    x: originalPosition.x,
+                    y: originalPosition.y,
+                    duration: 200,
+                    ease: Phaser.Math.Easing.Sine.Out,
+                    onComplete: () => {
+                        defender.takeDamage(attacker.baseAttack);
+                        this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                    }
+                });
+            }
+        });
     }
 }
