@@ -1,5 +1,6 @@
-import { HealthBar } from "./healthbar.js";
 import Phaser from "./lib/phaser.js";
+
+import { HealthBar } from "./healthbar.js";
 
 export class Panel {
     /** @type {Phaser.Scene} */
@@ -11,6 +12,8 @@ export class Panel {
     #textName;
     /** @type {HealthBar} */
     #healthBar;
+    /** @type {HealthBar} */
+    #actionPoints;
 
     constructor(scene) {
         this.#scene = scene;
@@ -35,16 +38,28 @@ export class Panel {
      * @param {number} max 
      */
     updateHealthBar(current, max) {
-        console.log(current, max);
         this.#healthBar.setText(`${current}/${max}`);
         this.#healthBar.setWidthAnimated(current / max);
+    }
+
+    /**
+     * @param {number} current 
+     * @param {number} max 
+     */
+    updateActionPoints(current, max) {
+        this.#actionPoints.setText(`${current}/${max}`);
+        this.#actionPoints.setWidthAnimated(current / max, {
+            duration: 100,
+        });
     }
 
     #createPanel() {
         this.#textName = this.#scene.add.text(0, 0, 'XXXXXXXXX');
 
-        this.#healthBar = new HealthBar(this.#scene, 0, 100, 200);
+        this.#healthBar = new HealthBar(this.#scene, 0, 40, 200);
 
-        this.#container = this.#scene.add.container(0, 0, [this.#textName, this.#healthBar.container]);
+        this.#actionPoints = new HealthBar(this.#scene, 0, 80, 200);
+
+        this.#container = this.#scene.add.container(0, 0, [this.#textName, this.#healthBar.container, this.#actionPoints.container]);
     }
 }

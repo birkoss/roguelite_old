@@ -95,8 +95,8 @@ export class MainScene extends Phaser.Scene {
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 100,
-                maxAp: 1,
-                currentAp: 0,
+                maxAp: 3,
+                currentAp: 3,
                 baseAttack: 10,
                 assetKey: MAP_ASSET_KEYS.UNITS,
                 assetFrame: 0,
@@ -208,8 +208,7 @@ export class MainScene extends Phaser.Scene {
 
         let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
         this.#panel.updateName(player.name);    
-        this.#panel.updateHealthBar(player.currentHp, player.maxHp);
-        console.log(player);
+        this.#refreshPanel();
     }
 
     #createStateMachine() {
@@ -251,6 +250,8 @@ export class MainScene extends Phaser.Scene {
 
                 // Pick the next unit
                 this.#pickNextUnit();
+
+                this.#refreshPanel();
 
                 this.#stateMachine.setState(MAIN_STATES.UNIT_START);
             },
@@ -475,6 +476,7 @@ export class MainScene extends Phaser.Scene {
                         MAIN_UI_ASSET_KEYS.MOVE,
                         () => {
                             this.#selectedUnit.useAp();
+                            this.#refreshPanel();
 
                             this.#unselectUnit();
 
@@ -566,6 +568,9 @@ export class MainScene extends Phaser.Scene {
         }
 
         attacker.useAp();
+        if (attacker.type == UNIT_TYPES.PLAYER) {
+            this.#refreshPanel();
+        }
 
         var originalPosition = {
             x: attacker.gameObject.x,
@@ -591,7 +596,7 @@ export class MainScene extends Phaser.Scene {
                     defender.takeDamage(attacker.baseAttack);
                     // Update the player healthbar
                     if (defender.type === UNIT_TYPES.PLAYER) {
-                        this.#panel.updateHealthBar(defender.currentHp, defender.maxHp);
+                        this.#refreshPanel();
                     }
 
                     // Move the attacker back
@@ -611,5 +616,13 @@ export class MainScene extends Phaser.Scene {
                 effect.anims.play("attack", true);
             }
         });
+    }
+
+    #refreshPanel() {
+        console.log("RP...");
+        let player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
+
+        this.#panel.updateHealthBar(player.currentHp, player.maxHp);
+        this.#panel.updateActionPoints(player.currentAp, player.maxAp);
     }
 }

@@ -128,6 +128,16 @@ export class Unit {
     }
 
     /** @type {number} */
+    get currentAp() {
+        return this._currentAp;
+    }
+
+    /** @type {number} */
+    get maxAp() {
+        return this._maxAp;
+    }
+
+    /** @type {number} */
     get baseAttack() {
         return this._unitDetails.baseAttack;
     }
