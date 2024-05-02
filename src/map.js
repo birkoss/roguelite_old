@@ -64,6 +64,16 @@ export class Map {
         return this.tiles.filter(singleTile => singleTile.x === x && singleTile.y === y && singleTile.type === TILE_TYPE.FLOOR).length == 1;
     }
 
+    /**
+     * 
+     * @param {import('./types/typedef.js').Coordinate} position1 
+     * @param {import('./types/typedef.js').Coordinate} position2 
+     * @returns {number}
+     */
+    getDistanceBetween(position1, position2) {
+        return Math.abs(position1.x - position2.x) + Math.abs(position1.y - position2.y);
+    }
+
     #generateMap() {
         this.#tiles = [];
 

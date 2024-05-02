@@ -88,7 +88,7 @@ export class MainScene extends Phaser.Scene {
                 currentLevel: 1,
                 maxHp: 10,
                 currentHp: 10,
-                maxAp: 3,
+                maxAp: 1,
                 currentAp: 0,
                 baseAttack: 5,
                 assetKey: MAP_ASSET_KEYS.UNITS,
@@ -145,7 +145,6 @@ export class MainScene extends Phaser.Scene {
             }
         }, { x: 2, y: 2 });
         this.#mapContainer.add(player.gameObject);
-        this.#units.push(player);
 
         const enemy = new Unit(UNIT_TYPES.ENEMY, {
             scene: this,
@@ -163,7 +162,9 @@ export class MainScene extends Phaser.Scene {
             }
         }, { x: 1, y: 2 });
         this.#mapContainer.add(enemy.gameObject);
+
         this.#units.push(enemy);
+        this.#units.push(player);
 
         this.#units.forEach((singleUnit) => {
             singleUnit.gameObject.setInteractive();
@@ -201,6 +202,7 @@ export class MainScene extends Phaser.Scene {
                 // TODO: Sort them by SPEED
                 const unitsAlive = this.#units.filter(singleUnit => singleUnit.isAlive);
                 if (unitsAlive.length == 0) {
+                    console.log("EVERYONE IS DEAD...");
                     // TODO: Should not appends, but in case...
                     return;
                 }
@@ -271,7 +273,45 @@ export class MainScene extends Phaser.Scene {
                     return;
                 }
 
+                const player = this.#units.filter(singleUnit => singleUnit.type == UNIT_TYPES.PLAYER).shift();
+
+                // Can attack the player ?
+                const distanceBetweenPlayer = this.#map.getDistanceBetween(this.#currentUnitQueue.position, player.position);
+                if (distanceBetweenPlayer == 1) {
+                    this.#attack_melee(this.#currentUnitQueue, player, () => {
+                        this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
+                    });
+                    return;
+                }
+
+                // Get next move between the player
                 // Pick a move
+
+                
+                // let diff = this.map.getDistanceBetweenUnit(this.map.player, single_enemy);
+
+                // if (diff == 1) {
+                //     this.cameras.main.shake(500);
+                //     this.attackUnit(single_enemy, this.map.player, this.nextTurn);
+                // } else {
+                //     let pf = new Pathfinding(this.map.export(), this.map.config.width, this.map.config.height);
+                //     let tiles = pf.find({
+                //         x: single_enemy.gridX,
+                //         y: single_enemy.gridY
+                //     }, {
+                //         x: this.map.player.gridX,
+                //         y: this.map.player.gridY
+                //     });
+        
+                //     if (tiles.length > 1) {
+                //         let neighboor = tiles[0];
+                //         single_enemy.move(neighboor.x, neighboor.y);
+                //     } else {
+                //         this.nextTurn();
+                //     }
+                // }
+
+                // Move closer to the player
                 this.#currentUnitQueue.useAp();
                 this.#currentUnitQueue.move(this.#currentUnitQueue.position.x + 1, this.#currentUnitQueue.position.y, () => {
                     this.#stateMachine.setState(MAIN_STATES.CHANGE_UNIT);
