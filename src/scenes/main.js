@@ -221,6 +221,7 @@ export class MainScene extends Phaser.Scene {
                 this.#createMap();
                 this.#createUnits();
                 this.#createPanel();
+                this.#createAnimations();
 
                 this.time.delayedCall(500, () => {
                     this.#stateMachine.setState(MAIN_STATES.TURN_START);
@@ -399,6 +400,22 @@ export class MainScene extends Phaser.Scene {
         this.#stateMachine.setState(MAIN_STATES.CREATE_MAP);
     }
 
+    #createAnimations() {
+        this.anims.create({
+            key: "attack",
+            frames: [{
+                frame: 10,
+                key: MAP_ASSET_KEYS.EFFECTS_LARGE
+            },{
+                frame: 11,
+                key: MAP_ASSET_KEYS.EFFECTS_LARGE
+            }],
+            frameRate: 20,
+            yoyo: true,
+            repeat: 1,
+        });
+    }
+
     #pickNextUnit() {
         this.#currentUnitQueue = this.#unitsQueue.shift();
 
@@ -562,28 +579,36 @@ export class MainScene extends Phaser.Scene {
             duration: 200,
             ease: Phaser.Math.Easing.Sine.Out,
             onComplete: () => {
-                // TODO: Animation
-                this.tweens.add({
-                    targets: attacker.gameObject,
-                    x: originalPosition.x,
-                    y: originalPosition.y,
-                    duration: 200,
-                    ease: Phaser.Math.Easing.Sine.Out,
-                    onComplete: () => {
-                        defender.takeDamage(attacker.baseAttack);
-                        
-                        // Update the player healthbar
-                        if (defender.type === UNIT_TYPES.PLAYER) {
-                            this.#panel.updateHealthBar(defender.currentHp, defender.maxHp);
-                        }
+                let effect = this.add.sprite(
+                    defender.gameObject.x + defender.gameObject.displayWidth / 2,
+                    defender.gameObject.y + defender.gameObject.displayHeight / 2,
+                    MAP_ASSET_KEYS.EFFECTS_LARGE
+                );
+                this.#mapContainer.add(effect);
+                effect.on("animationcomplete", (tween, sprite, element) => {
+                    element.destroy();
 
-                        this.time.delayedCall(200, () => {
+                    defender.takeDamage(attacker.baseAttack);
+                    // Update the player healthbar
+                    if (defender.type === UNIT_TYPES.PLAYER) {
+                        this.#panel.updateHealthBar(defender.currentHp, defender.maxHp);
+                    }
+
+                    // Move the attacker back
+                    this.tweens.add({
+                        targets: attacker.gameObject,
+                        x: originalPosition.x,
+                        y: originalPosition.y,
+                        duration: 200,
+                        ease: Phaser.Math.Easing.Sine.Out,
+                        onComplete: () => {
                             if (callback) {
                                 callback();
                             }
-                        });
-                    }
+                        }
+                    });
                 });
+                effect.anims.play("attack", true);
             }
         });
     }
