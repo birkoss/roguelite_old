@@ -588,7 +588,6 @@ export class MainScene extends Phaser.Scene {
      */
     #attack_melee(attacker, defender, callback) {
         // Face forward the defender
-        console.log(attacker.position.x, defender.position.x);
         if (attacker.position.x < defender.position.x) {
             attacker.face(UNIT_DIRECTION.RIGHT);
         } else if (attacker.position.x > defender.position.x) {
